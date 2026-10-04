@@ -1,0 +1,105 @@
+name: Windows JR installer (unsigned)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-jr-build.yml'
+      - 'tools/**'
+      - 'requirements-build.txt'
+      - 'AUTOCATCHSUBS-release-source/**'
+      - 'AUTOCATCHSUBS-backend-source/jr/**'
+      - 'AUTOCATCHSUBS-licensing/**'
+      - 'AUTOCATCHSUBS-packages/jr/**'
+permissions:
+  contents: read
+concurrency:
+  group: windows-jr-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: X:\s
+    env:
+      CARGO_TARGET_DIR: X:\t
+      RUSTUP_TOOLCHAIN: '1.99.0'
+      CMAKE_BUILD_PARALLEL_LEVEL: '4'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: s
+      - name: Short build path
+        working-directory: ${{ github.workspace }}
+        run: |
+          if(Test-Path X:\){throw 'X: already exists; refusing to replace it'}
+          subst X: "$env:GITHUB_WORKSPACE"
+          if($LASTEXITCODE -ne 0){throw 'Could not create build path'}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        with:
+          arch: x64
+      - name: Verify sources and install Python build dependencies
+        run: |
+          python tools/verify-source.py
+          if($LASTEXITCODE -ne 0){throw 'Source checks failed'}
+          python -m pip install -r requirements-build.txt
+          if($LASTEXITCODE -ne 0){throw 'Python dependencies failed'}
+          python -m pip freeze > AUTOCATCHSUBS-python-environment.txt
+          rustup toolchain install 1.99.0 --profile minimal
+          if($LASTEXITCODE -ne 0){throw 'Rust toolchain failed'}
+      - name: Verified Windows dependencies
+        run: ./tools/bootstrap-windows.ps1
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{ github.workspace }}/t
+          key: windows-jr-rust199-vulkan1363-${{ hashFiles('s/AUTOCATCHSUBS-release-source/Cargo.lock', 's/AUTOCATCHSUBS-release-source/**/*.rs', 's/AUTOCATCHSUBS-release-source/tauri*.json') }}
+          restore-keys: windows-jr-rust199-vulkan1363-
+      - name: Compile JR client from public sources
+        run: ./tools/build-native.ps1 -Edition jr
+      - name: Freeze Python backend and assemble
+        run: |
+          python AUTOCATCHSUBS-licensing/build_backend.py jr
+          if($LASTEXITCODE -ne 0){throw 'Python backend build failed'}
+          python tools/assemble-ci.py
+          if($LASTEXITCODE -ne 0){throw 'Package assembly failed'}
+      - name: Offline runtime and activation guard checks
+        run: |
+          python tools/smoke-ci.py
+          if($LASTEXITCODE -ne 0){throw 'Runtime checks failed'}
+      - name: Compile unsigned installer
+        run: |
+          & ./AUTOCATCHSUBS-build-tools/Inno/ISCC.exe /Qp /DEdition=jr ./AUTOCATCHSUBS-licensing/installer.iss
+          if($LASTEXITCODE -ne 0){throw 'Inno compilation failed'}
+      - name: Install and uninstall on clean runner
+        run: ./tools/test-installer-ci.ps1
+      - name: Candidate metadata
+        run: |
+          $file=Get-Item ./AUTOCATCHSUBS-installers/AUTOCATCHSUBSJR-Setup.exe
+          @{commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;edition='jr';signed=$false;sha256=(Get-FileHash $file.FullName -Algorithm SHA256).Hash;production_licenses_consumed=0;resolve_timeline_tested=$false;smart_app_control_tested=$false} | ConvertTo-Json | Set-Content ./AUTOCATCHSUBS-installers/build-provenance.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AUTOCATCHSUBSJR-unsigned-${{ github.sha }}
+          path: ${{ github.workspace }}/s/AUTOCATCHSUBS-installers/*
+          retention-days: 3
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: Windows-build-reports-${{ github.run_id }}
+          path: |
+            ${{ github.workspace }}/s/AUTOCATCHSUBS-build-tools/*.json
+            ${{ github.workspace }}/s/AUTOCATCHSUBS-build-tools/*.log
+            ${{ github.workspace }}/s/AUTOCATCHSUBS-python-environment.txt
+          retention-days: 3

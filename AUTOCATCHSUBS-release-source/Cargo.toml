@@ -9,7 +9,7 @@ resolver = "2"
 [package]
 autolib = false
 name = "autosubs"
-version = "3.8.0"
+version = "3.8.11"
 description = "Transcribe and diarize audio files"
 authors = ["Tom Moroney"]
 edition = "2024"

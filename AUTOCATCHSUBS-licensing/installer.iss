@@ -44,7 +44,8 @@ UninstallDisplayIcon={app}\AUTOCATCHSUBS.exe
 CloseApplications=no
 RestartApplications=no
 ChangesAssociations=no
-LicenseFile={#PackageRoot}\LICENSE-AutoSubs
+LicenseFile={#PackageRoot}\LICENSE
+InfoBeforeFile={#PackageRoot}\PRIVACY.md
 InfoAfterFile={#PackageRoot}\LEEME.txt
 
 [Languages]

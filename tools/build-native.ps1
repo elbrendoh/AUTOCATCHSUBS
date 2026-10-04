@@ -9,4 +9,12 @@ $env:TAURI_CONFIG=Get-Content (Join-Path $acsSource ('tauri.'+$Edition+'.json'))
 $acsFeatures='windows,custom-protocol'
 if($Edition -eq 'admin'){$acsFeatures+=',acs-admin'}
 Push-Location $acsSource
-try { cargo build --locked --release --bin autosubs --no-default-features --features $acsFeatures; if($LASTEXITCODE -ne 0){throw 'Fallo la compilacion'} } finally {Pop-Location}
+try {
+  cargo build --locked --release --bin autosubs --no-default-features --features $acsFeatures -j 4
+  if($LASTEXITCODE -ne 0){throw 'Fallo la compilacion'}
+  $acsTarget=if($env:CARGO_TARGET_DIR){$env:CARGO_TARGET_DIR}else{Join-Path $acsSource 'target'}
+  $acsOutput=Join-Path $acsRoot ('AUTOCATCHSUBS-release-binaries/'+$Edition)
+  New-Item -ItemType Directory -Path $acsOutput -Force | Out-Null
+  Copy-Item -LiteralPath (Join-Path $acsTarget 'release/autosubs.exe') -Destination (Join-Path $acsOutput 'AUTOCATCHSUBS.exe') -Force
+  Get-ChildItem (Join-Path $acsTarget 'release') -Filter '*.dll' -File | Copy-Item -Destination $acsOutput -Force
+} finally {Pop-Location}

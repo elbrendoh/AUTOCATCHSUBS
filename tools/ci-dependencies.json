@@ -1,0 +1,23 @@
+{
+  "vulkan": {
+    "url": "https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/vulkansdk-windows-X64-1.4.363.0.exe",
+    "sha256": "94a82d378f7a5e3e54c9db7d2fb7016af136e14ac0a18dbf0f2f67a36352d141"
+  },
+  "ffmpeg": {
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-01-13-06/ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1.zip",
+    "sha256": "84e4495b9883dbf3997435943d2d7057cc55a4c31973f7422f56b1b56974006d",
+    "sources": "https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-10-01-13-06"
+  },
+  "inno": {
+    "url": "https://github.com/jrsoftware/issrc/releases/download/is-6_5_4/innosetup-6.5.4.exe",
+    "sha256": "fa73bf47a4da250d185d07561c2bfda387e5e20db77e4570004cf6a133cc10b1"
+  },
+  "webview2": {
+    "url": "https://go.microsoft.com/fwlink/p/?LinkId=2124703",
+    "publisher": "Microsoft Corporation"
+  },
+  "vulkanLicense": {
+    "url": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Loader/fa218055ff4948b159f31d43f800c808a13d51df/LICENSE.txt",
+    "sha256": "43c0a37e6a0fa7ff3c843b3ec5a4fac84b712558ddac103fbd4c1649662a9ece"
+  }
+}
