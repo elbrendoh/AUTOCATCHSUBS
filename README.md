@@ -26,6 +26,6 @@ Consulta [BUILD.md](BUILD.md), [PRIVACY.md](PRIVACY.md) y [CODE_SIGNING.md](CODE
 
 ## Estado de distribucion
 
-El codigo se ha preparado como paquete publicable. Todavia no cuenta con firma reconocida de distribucion ni con aprobacion de SignPath. Windows con Control inteligente de aplicaciones puede bloquear los ejecutables actuales. No se cambia ni desactiva la seguridad del equipo.
+El codigo esta publicado bajo MIT. El propietario confirma que envio la solicitud a SignPath el 3 de octubre de 2026; respuesta y aprobacion pendientes. Todavia no cuenta con firma reconocida de distribucion. Windows con Control inteligente de aplicaciones puede bloquear los ejecutables actuales. No se cambia ni desactiva la seguridad del equipo.
 
 Las pruebas del lanzador directo y de los controles de licencia siguen pasando. El ZIP de fuentes no es un nuevo instalador firmado ni una confirmacion de apertura en la PC bloqueada.
