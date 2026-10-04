@@ -1,0 +1,52 @@
+local acsLauncher
+local function process_launcher()
+    if not acsLauncher then
+        local root = main_app:match("^(.*)[\\/][^\\/]+$")
+        local filename=join_path(root,"resources/modules/autocatchsubs_launch.lua")
+        local chunk,reason=loadstring(read_file(filename),"@"..filename)
+        assert(chunk,reason);acsLauncher=chunk()
+    end
+    return acsLauncher
+end
+
+function LaunchApp()
+    local root = main_app:match("^(.*)[\\/][^\\/]+$")
+    local backend = join_path(root,"AUTOCATCHSUBSBackend.exe")
+    local host = tonumber(ffi.C.GetCurrentProcessId())
+    local requestId = tostring(host).."-"..tostring(tonumber(ffi.C.GetTickCount64()))
+    local parameters = '--host-pid '..host..' --request-id '..requestId
+    local launcher=process_launcher()
+    local process,problem=launcher.start(backend,parameters,root)
+    if not process then
+        print('[AUTOCATCHSUBS_ERROR] '..problem)
+        print('[SYSTEM_INFO] Ejecuta '..join_path(root,'DIAGNOSTICO AUTOCATCHSUBS.cmd')..' y copia el informe. No requiere una licencia activa.')
+        return false
+    end
+    local deadline = tonumber(ffi.C.GetTickCount64()) + 15000
+    while tonumber(ffi.C.GetTickCount64()) < deadline do
+        local ok,content=pcall(read_file,join_path(root,'state/launch-result.json'))
+        if ok then
+            local decoded,answer=pcall(json.decode,content)
+            if decoded and answer and answer.request_id==requestId then
+                launcher.close(process)
+                if answer.opened then
+                    print('[AUTOCATCHSUBS] Ventana visible confirmada; Resolve PID='..tostring(answer.resolve_pid)..'; interfaz PID='..tostring(answer.pid))
+                    return true
+                end
+                print('[AUTOCATCHSUBS_ERROR] '..tostring(answer.error or answer.message or 'No se pudo mostrar la ventana'))
+                return false
+            end
+        end
+        local exited,code=launcher.exited(process)
+        if exited then
+            launcher.close(process)
+            print('[AUTOCATCHSUBS_ERROR] El backend termino antes de confirmar la ventana; exit='..tostring(code)..'. Ejecuta DIAGNOSTICO AUTOCATCHSUBS.cmd.')
+            return false
+        end
+        sleep(0.05)
+    end
+    launcher.close(process)
+    print('[AUTOCATCHSUBS_ERROR] El backend inicio pero no confirmo la ventana en 15s. Ejecuta DIAGNOSTICO AUTOCATCHSUBS.cmd.')
+    return false
+end
+

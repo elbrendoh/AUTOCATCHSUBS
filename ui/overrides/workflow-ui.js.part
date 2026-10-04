@@ -1,0 +1,178 @@
+// AUTOCATCHSUBS additions share the original React runtime and Tauri IPC.
+const ACS_REVISION = "insertar-2026-10-03-r9";
+const ACS_ERRORS = [];
+const ACS_CHANGES = [
+  "AUTOCATCHSUBS · DaVinci Resolve",
+  "Estilo: Text+ y títulos Fusion personalizados; clips de ajuste excluidos.",
+  "Console: registros locales y Copiar Log.",
+  "Favoritos con estrella: títulos y preajustes fijados arriba.",
+  "ELIMINAR junto a Last word, con Deshacer durante 3,5 segundos.",
+  "Añadir a la timeline permanece visible; se desactiva si falta la timeline y se recupera automáticamente.",
+  "Las filas vacías se omiten al enviar subtítulos a la timeline."
+];
+const ACS_LISTENERS = new Set();
+const ACS_TEMPLATE_LISTENERS = new Set();
+const ACS_FAVORITE_STORAGE = "AUTOCATCHSUBS.styleFavorites.v1";
+const ACS_FAVORITE_LISTENERS = new Set();
+function acsReadFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ACS_FAVORITE_STORAGE) || "[]");
+    return new Set(Array.isArray(saved) ? saved.filter(x => typeof x === "string" && x.length < 1024) : []);
+  } catch { return new Set(); }
+}
+let ACS_FAVORITES = acsReadFavorites(), ACS_UNDO_TIMER = null, ACS_UNDO_TOAST_ID = null;
+function acsToggleFavorite(key) {
+  const next = new Set(ACS_FAVORITES);
+  next.has(key) ? next.delete(key) : next.add(key);
+  try { localStorage.setItem(ACS_FAVORITE_STORAGE, JSON.stringify([...next])); }
+  catch { ACS_TOAST.error("No se pudo guardar el favorito localmente", {duration:3500}); return; }
+  ACS_FAVORITES = next;
+  ACS_FAVORITE_LISTENERS.forEach(update => update(next));
+}
+function useACSFavorites() {
+  const [keys, setKeys] = l.useState(() => ACS_FAVORITES);
+  l.useEffect(() => {
+    ACS_FAVORITE_LISTENERS.add(setKeys); setKeys(ACS_FAVORITES);
+    return () => ACS_FAVORITE_LISTENERS.delete(setKeys);
+  }, []);
+  return {keys, toggle:acsToggleFavorite};
+}
+function acsFavoritesFirst(items, favorites, key) {
+  // Stable partition preserves the original order inside both groups.
+  return [...items.filter(x => favorites.keys.has(key(x))),
+          ...items.filter(x => !favorites.keys.has(key(x)))];
+}
+function ACSFavoriteButton({favoriteKey, label, favorites}) {
+  const saved = favorites.keys.has(favoriteKey);
+  const action = saved ? "Quitar de favoritos: " : "Marcar favorito: ";
+  return f.jsx("button", {type:"button", className:"acs-favorite", "aria-label":action+label,
+    "aria-pressed":saved, title:action+label, onKeyDown:event => event.stopPropagation(),
+    onClick:event => { event.stopPropagation(); favorites.toggle(favoriteKey); },
+    children:f.jsx("svg", {viewBox:"0 0 24 24",width:17,height:17,fill:saved?"currentColor":"none",
+      stroke:"currentColor",strokeWidth:1.7,strokeLinejoin:"round","aria-hidden":true,
+      children:f.jsx("path",{d:"m12 3 2.78 5.63L21 9.54l-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.93 1.06-6.2L3 9.54l6.22-.91L12 3Z"})})});
+}
+function ACSStyleRow({item, selected, onSelect, favorites}) {
+  return f.jsxs("div",{className:"acs-style-row","data-style-value":item.value,children:[
+    f.jsxs("button",{type:"button",onClick:onSelect,"aria-label":item.label,"aria-pressed":selected,
+      className:fe("acs-style-select flex min-h-[56px] w-full items-center justify-between rounded-md border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected?"border-slate-950 bg-slate-950 text-white shadow-sm":"border-border bg-background text-foreground hover:bg-muted/50"),
+      children:[f.jsx("span",{children:item.label}),selected&&f.jsx(ur,{className:"size-4 shrink-0"})]}),
+    f.jsx(ACSFavoriteButton,{favoriteKey:"text:"+item.value,label:item.label,favorites})]});
+}
+function acsCapture(tag, values) {
+  const text = values.map(value => value instanceof Error ? value.message :
+    typeof value === "string" ? value : "[detalle disponible en el registro local]").join(" ").slice(0, 1800);
+  ACS_ERRORS.push(`${new Date().toISOString()} [${tag}] ${text}`);
+  if (ACS_ERRORS.length > 150) ACS_ERRORS.shift();
+  ACS_LISTENERS.forEach(fn => fn());
+  Yn({func:"RecordUiError",tag,text}).catch(() => {});
+}
+for (const [method, tag] of [["warn", "SYSTEM_WARN"], ["error", "AUTOCATCHSUBS_ERROR"]]) {
+  const original = console[method].bind(console);
+  console[method] = (...values) => { original(...values); acsCapture(tag, values); };
+}
+window.addEventListener("error", event => acsCapture("AUTOCATCHSUBS_ERROR", [event.error || event.message]));
+window.addEventListener("unhandledrejection", event => acsCapture("AUTOCATCHSUBS_ERROR", [event.reason]));
+function acsEvent(event) { Yn({func:"UiEvent", event}).catch(() => {}); }
+function useACSStyles(initial) {
+  const [fresh, setFresh] = l.useState(null);
+  const [pending, setPending] = l.useState(true);
+  const [progress, setProgress] = l.useState(null);
+  l.useEffect(() => {
+    let cancelled = false, timer = null, signature = "";
+    const refresh = async () => {
+      try {
+        const status = await Yn({func:"GetTemplateCacheStatus"}, 3);
+        if (!cancelled) { setPending(Boolean(status.scanning || status.pending)); setProgress(status.progress || null); }
+        if (status.complete) {
+          const items = await Yn({func:"GetTemplates"}, 3);
+          if (!cancelled && Array.isArray(items) && JSON.stringify(items) !== signature) {
+            signature = JSON.stringify(items);
+            setFresh(items);
+            ACS_TEMPLATE_LISTENERS.forEach(notify => notify(items));
+          }
+        }
+      } catch {}
+      if (!cancelled) timer = setTimeout(refresh, 1000);
+    };
+    refresh();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []);
+  return {items:fresh || initial, pending, progress};
+}
+function ACSRefreshStyles() {
+  const [busy, setBusy] = l.useState(false), timer = l.useRef(null), active = l.useRef(true);
+  l.useEffect(() => { active.current=true; return () => { active.current=false; clearTimeout(timer.current); }; }, []);
+  async function refresh() {
+    if (busy) return;
+    setBusy(true);
+    const deadline = Date.now() + 120000;
+    try {
+      const result = await Yn({func:"RefreshTemplates"}, 3);
+      if (result.error) throw Error(result.detail || result.message);
+      const poll = async () => {
+        try {
+          const status = await Yn({func:"GetTemplateCacheStatus"}, 3);
+          if (!active.current) return;
+          if (!status.scanning && !status.pending) { setBusy(false); return; }
+          if (Date.now() > deadline) throw Error("Resolve tarda en actualizar los estilos; se conserva la lista anterior.");
+          timer.current = setTimeout(poll, 1500);
+        } catch (failure) {
+          if (active.current) { setBusy(false); ACS_TOAST.error(failure.message || String(failure)); }
+        }
+      };
+      if (active.current) timer.current = setTimeout(poll, 1500);
+    } catch (failure) {
+      if (active.current) { setBusy(false); ACS_TOAST.error(failure.message || String(failure)); }
+    }
+  }
+  return f.jsx("button", {type:"button", className:"acs-refresh-styles", disabled:busy,
+    onClick:refresh, "aria-label":"Actualizar estilos", title:busy ? "Actualizando estilos…" : "Actualizar estilos: detectar nuevos Text+",
+    children:busy ? "…" : "⟳"});
+}
+function ACSConsole() {
+  // The companion process owns the external dock and copies logs natively.
+  return null;
+}
+function ACSStyleProgress({progress, pending}) {
+  if (!progress) return null;
+  const {phase, current=0, total, percent, styles=0} = progress;
+  const number = value => Number(value).toLocaleString("es-PE");
+  const labels = {counting:"Contando clips…",scanning:"Revisando clips",importing:"Preparando Text+…",
+    verifying:"Verificando Text+…",waiting:"Resolve ocupado; reintentando…",complete:`Listo · ${number(styles)} estilos`};
+  const label = labels[phase] || "Actualizando estilos…";
+  const count = total ? `${number(current)} / ${number(total)} clips` : "";
+  const determinate = typeof percent === "number";
+  return f.jsxs("div",{className:"acs-style-progress","aria-live":"polite",children:[
+    f.jsxs("div",{className:"acs-progress-caption",children:[f.jsx("span",{children:label}),
+      f.jsx("span",{children:phase==="complete" ? "100%" : count + (determinate ? ` · ${percent}%` : "")})]}),
+    f.jsx("div",{role:"progressbar","aria-label":"Progreso de actualización de estilos",
+      "aria-valuemin":0,"aria-valuemax":100,"aria-valuenow":determinate?percent:undefined,
+      "aria-valuetext":label+(count ? " · "+count:""),className:"acs-progress-track",
+      children:f.jsx("div",{className:determinate ? "acs-progress-fill" : "acs-progress-fill acs-progress-indeterminate",
+        style:determinate ? {width:`${percent}%`} : undefined})})]});
+}
+// Same look and controls as the native subtitle editor; updateSubtitles persists
+// through the original document provider. Undo cannot overwrite later edits.
+function acsDeleteSubtitle({rows, index, update, select, draft, original, speaker, latest, filename}) {
+  if (!rows[index]) return;
+  const after = rows.filter((row, position) => position !== index);
+  update(after); select(null); draft(""); original(""); speaker(null);
+  acsEvent("subtitle-deleted");
+  clearTimeout(ACS_UNDO_TIMER);
+  if (ACS_UNDO_TOAST_ID !== null) ACS_TOAST.dismiss(ACS_UNDO_TOAST_ID);
+  const toastId = ACS_TOAST("Fila eliminada", {className:"acs-undo-toast",duration:3500, action:{label:"Deshacer", onClick:() => {
+    clearTimeout(ACS_UNDO_TIMER); ACS_UNDO_TIMER = null;
+    ACS_UNDO_TOAST_ID = null;
+    if (latest.current.rows !== after || latest.current.filename !== filename) {
+      ACS_TOAST.error("No se puede deshacer porque la transcripción ya cambió.");
+      return;
+    }
+    update(rows, filename); select(null); acsEvent("subtitle-restored");
+  }}});
+  ACS_UNDO_TOAST_ID = toastId;
+  // Sonner pauses its timer on hover/focus. This small notification must still
+  // leave the editing area after 3.5 seconds, even when the pointer rests on it.
+  ACS_UNDO_TIMER = setTimeout(() => { ACS_TOAST.dismiss(toastId); ACS_UNDO_TIMER = null; ACS_UNDO_TOAST_ID = null; },3500);
+}

@@ -1,5 +1,0 @@
-{
-  "rust-analyzer.linkedProjects": [
-    "AutoSubs-App/src-tauri/Cargo.toml"
-  ]
-}

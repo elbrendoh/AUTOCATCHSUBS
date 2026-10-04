@@ -1,0 +1,4 @@
+AUTOCATCHSUBS JR
+Workspace > Scripts > Utility.
+JR conserva la activacion: un codigo permanente por PC. Internet solo para activar y consultar revocaciones.
+Distribucion sin firma: puede ser bloqueada por Control inteligente de aplicaciones.

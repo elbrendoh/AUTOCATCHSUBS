@@ -1,0 +1,134 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "AUTOCATCHSUBS",
+  "version": "3.8.10",
+  "identifier": "com.acsubs01",
+  "build": {
+    "frontendDist": "dist-admin"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$DESKTOP/**",
+          "$DOCUMENT/**",
+          "$DOWNLOAD/**",
+          "$RESOURCE/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/ffmpeg"
+    ]
+  },
+  "plugins": {
+    "cli": {
+      "description": "AUTOCATCHSUBS \u2014 transcripci\u00f3n local para DaVinci Resolve",
+      "longDescription": "AUTOCATCHSUBS para DaVinci Resolve",
+      "args": [
+        {
+          "name": "input",
+          "description": "Path to the audio or video file to transcribe.",
+          "index": 1,
+          "takesValue": true
+        },
+        {
+          "name": "model",
+          "short": "m",
+          "description": "Transcription model: a Whisper size (tiny, base, small, medium, large-v3, large-v3-turbo, plus .en variants), parakeet, or a moonshine variant (moonshine-tiny, moonshine-base, ...). Downloaded automatically if missing. Default: small. See --list-models.",
+          "takesValue": true
+        },
+        {
+          "name": "list-models",
+          "description": "List the available transcription models and exit."
+        },
+        {
+          "name": "output",
+          "short": "o",
+          "description": "Write to this file instead of stdout (format inferred from extension if --format is omitted).",
+          "takesValue": true
+        },
+        {
+          "name": "format",
+          "short": "f",
+          "description": "Output format: text (default), json, srt, or vtt.",
+          "takesValue": true
+        },
+        {
+          "name": "lang",
+          "short": "l",
+          "description": "Source language code (e.g. en). Auto-detected if omitted.",
+          "takesValue": true
+        },
+        {
+          "name": "translate",
+          "description": "Translate the transcript to English."
+        },
+        {
+          "name": "target-language",
+          "description": "Target language code for translation.",
+          "takesValue": true
+        },
+        {
+          "name": "diarize",
+          "description": "Enable speaker diarization."
+        },
+        {
+          "name": "max-speakers",
+          "description": "Maximum number of speakers when diarizing.",
+          "takesValue": true
+        },
+        {
+          "name": "forced-alignment",
+          "description": "Refine word timestamps with the optional MMS forced aligner."
+        },
+        {
+          "name": "gpu",
+          "description": "Force GPU acceleration on."
+        },
+        {
+          "name": "no-gpu",
+          "description": "Disable GPU acceleration (CPU only)."
+        },
+        {
+          "name": "density",
+          "description": "Subtitle text density: less, standard, more, single, or custom.",
+          "takesValue": true
+        },
+        {
+          "name": "max-lines",
+          "description": "Maximum lines per subtitle.",
+          "takesValue": true
+        },
+        {
+          "name": "max-chars-per-line",
+          "description": "Custom maximum characters per line (used with --density custom).",
+          "takesValue": true
+        },
+        {
+          "name": "text-case",
+          "description": "Text case: none, lowercase, uppercase, or titlecase.",
+          "takesValue": true
+        },
+        {
+          "name": "remove-punctuation",
+          "description": "Strip punctuation from the transcript."
+        },
+        {
+          "name": "prompt",
+          "description": "Custom prompt to guide transcription.",
+          "takesValue": true
+        }
+      ]
+    }
+  }
+}

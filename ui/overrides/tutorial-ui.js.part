@@ -1,0 +1,131 @@
+// Manual, read-only coach marks. No transcription, selection, deletion or insert.
+const ACS_TUTORIAL_STEPS = [
+  {id:"welcome",target:'[data-acs-tour="tutorial-button"]',title:"Tu flujo, paso a paso",text:"Audio → transcripción → revisión → Text+ en Resolve. Esta guía te muestra dónde está cada control. Avanza a tu ritmo; Esc u Omitir te permiten salir."},
+  {id:"source",target:'[data-tour="mode-switcher"]',title:"1. Elige el origen",text:"Usa Línea de tiempo para leer el audio de Resolve, o Archivo para transcribir un audio local. Elige el origen que corresponde a tu trabajo."},
+  {id:"audio",target:'[data-tour="audio-input"]',title:"2. Selecciona la voz",text:"En Línea de tiempo, marca la pista que contiene la voz. Si faltan pistas, actualiza la lista. En Archivo, elige tu audio. Prepara en Resolve las marcas In/Out si quieres trabajar con un rango."},
+  {id:"language",target:'[data-tour="transcription-controls-target"]',title:"3. Idioma y opciones",text:"Selecciona el idioma del audio, o usa detección automática. En Opciones puedes ajustar cómo se dividen y presentan las frases. Conserva los ajustes que ya funcionan para tu flujo."},
+  {id:"model",target:'[data-tour="model-picker"]',title:"4. Modelo de transcripción",text:"Elige Whisper Large v3 Turbo para tu flujo habitual. Si el modelo necesita descargarse, espera a que esté disponible. La transcripción se procesa localmente."},
+  {id:"generate",target:'[data-acs-tour="generate"]',title:"5. Genera los subtítulos",text:"Con audio y modelo preparados, pulsa Generar. Durante el proceso verás su avance. Aquí solo señalamos el botón: el tutorial no inicia ninguna transcripción.",color:"red"},
+  {id:"preview",target:'[data-acs-tour="subtitle-preview"]',fallback:'[data-acs-tour="history"]',title:"6. Revisa tiempo y texto",text:"Al terminar, revisa las filas del panel Subtítulos. Cada una contiene tiempo y texto; selecciona una fila para corregirla. El historial permite recuperar transcripciones anteriores.",missing:"El panel aparece al generar o abrir subtítulos. No cargamos ni reemplazamos tu documento durante la guía."},
+  {id:"delete",target:'.acs-word-actions',fallback:'[data-acs-tour="subtitle-preview"], [data-acs-tour="history"]',title:"7. Quita las filas vacías",text:"Al editar una fila, ELIMINAR aparece junto a LAST WORD. Úsalo para quitar esa fila de la transcripción. Deshacer está disponible 3,5 segundos. Las filas vacías se omiten al insertar.",missing:"Selecciona una fila después del tutorial para ver sus controles de edición.",color:"red"},
+  {id:"styles",target:'[data-acs-tour="styles"]',title:"8. Abre Estilo",text:"Este botón abre los estilos de subtítulos. En los siguientes pasos mostraremos ese panel sin guardar cambios ni alterar tu estilo seleccionado."},
+  {id:"search",scene:"styles",target:'.acs-style-search',title:"9. Encuentra tu Text+",text:"Escribe el nombre que asignaste al título en Buscar Text+… Las mayúsculas y tildes no afectan la búsqueda. La lista muestra títulos verificados y excluye clips de ajuste.",missing:"El buscador aparece cuando el panel de estilos puede conectarse a Resolve."},
+  {id:"favorites",scene:"styles",target:'.acs-favorite',fallback:'.acs-style-heading',title:"10. Tus favoritos arriba",text:"Pulsa la estrella de un estilo para fijarlo arriba; vuelve a pulsarla para quitarlo de favoritos. Marcarla no selecciona el estilo. Las estrellas se guardan al instante y permanecen al reiniciar.",missing:"Las estrellas aparecen cuando hay títulos o preajustes disponibles. No creamos plantillas de ejemplo en tu proyecto."},
+  {id:"refresh",scene:"styles",target:'.acs-refresh-styles',title:"11. Detecta títulos nuevos",text:"Guarda tu nuevo Text+ en el Media Pool y guarda el proyecto en Resolve. Luego pulsa ⟳. La barra muestra clips revisados / total; la lista anterior se conserva durante el escaneo. Espera a Listo / 100%.",missing:"Actualizar estilos aparece junto al buscador cuando el panel está disponible."},
+  {id:"modes",scene:"styles",target:'.acs-style-heading [role="tablist"]',title:"12. Normal o Animado",text:"Normal utiliza tus títulos Text+. Animado ofrece los preajustes del caption animado cuando su plantilla está disponible. Elige un estilo y guarda el panel cuando realmente quieras aplicarlo. La guía lo cerrará sin guardar."},
+  {id:"insert",target:'[data-acs-tour="insert"]',fallback:'[data-acs-tour="subtitle-preview"], [data-acs-tour="history"]',title:"13. Coloca en la timeline",text:"Tras revisar los subtítulos, usa Añadir a la timeline. Confirma el estilo y la pista de video de destino en el diálogo. AUTOCATCHSUBS comprueba la identidad del Text+ antes de insertarlo.",missing:"Este control aparece cuando tienes subtítulos disponibles. El tutorial no coloca clips ni cambia pistas.",color:"red"},
+  {id:"console",edge:true,title:"14. Si necesitas un diagnóstico",text:"Console está pegado al borde derecho de la ventana, abajo y por fuera. Ábrelo para ver avisos y errores; pulsa Copiar Log y compártelo si algo falla. Desplegarlo conserva el ancho del panel Subtítulos."},
+  {id:"finish",target:'[data-acs-tour="tutorial-button"]',title:"Listo para trabajar",text:"El flujo es: seleccionar audio, generar, corregir, elegir Text+ y colocar. Puedes repetir esta guía con Tutorial cuando lo necesites. Tus ajustes, favoritos y documento se conservan."}
+];
+function acsTourVisible(element) {
+  if (!element) return false;
+  const r=element.getBoundingClientRect();
+  if (!r.width || !r.height) return false;
+  for (let node=element;node&&node!==document.body;node=node.parentElement) {
+    const css=getComputedStyle(node);
+    if (css.display==="none" || css.visibility==="hidden" || Number(css.opacity)===0) return false;
+  }
+  return true;
+}
+function acsTourTarget(selector) {
+  return selector ? [...document.querySelectorAll(selector)].find(acsTourVisible) : null;
+}
+function acsTourPlace(rect,w,h,vw,vh) {
+  const gap=20, clamp=(n,max)=>Math.max(10,Math.min(n,max-10));
+  const proposals=[{side:"bottom",x:rect.x+(rect.width-w)/2,y:rect.y+rect.height+gap},
+    {side:"top",x:rect.x+(rect.width-w)/2,y:rect.y-h-gap},
+    {side:"right",x:rect.x+rect.width+gap,y:rect.y+(rect.height-h)/2},
+    {side:"left",x:rect.x-w-gap,y:rect.y+(rect.height-h)/2}];
+  return proposals.map((p,order)=>{
+    const x=clamp(p.x,vw-w),y=clamp(p.y,vh-h);
+    const overlap=Math.max(0,Math.min(x+w,rect.x+rect.width)-Math.max(x,rect.x))*
+      Math.max(0,Math.min(y+h,rect.y+rect.height)-Math.max(y,rect.y));
+    return {...p,x,y,score:overlap*1000+Math.abs(p.x-x)+Math.abs(p.y-y)+order};
+  }).sort((a,b)=>a.score-b.score)[0];
+}
+function ACSTutorial({openStyle,styleOpen}) {
+  const [active,setActive]=l.useState(false),[index,setIndex]=l.useState(0),[view,setView]=l.useState(null);
+  const card=l.useRef(null),button=l.useRef(null),ownedStyle=l.useRef(false),scrolled=l.useRef([]),seenTarget=l.useRef(null);
+  const restore=l.useRef(null), step=ACS_TUTORIAL_STEPS[index];
+  function finish() {
+    if (ownedStyle.current) { ownedStyle.current=false; openStyle(false); }
+    setActive(false);setView(null);seenTarget.current=null;
+    scrolled.current.forEach(([node,x,y])=>{if(node.isConnected)node.scrollTo({left:x,top:y,behavior:"instant"});});
+    requestAnimationFrame(()=>{if(restore.current?.isConnected)restore.current.focus({preventScroll:true});});
+  }
+  function move(amount) {
+    if(index+amount>=ACS_TUTORIAL_STEPS.length)finish();
+    else setIndex(Math.max(0,index+amount));
+  }
+  function begin() {
+    if(active)return;
+    restore.current=document.activeElement;
+    scrolled.current=[...document.querySelectorAll('[data-radix-scroll-area-viewport]')].map(node=>[node,node.scrollLeft,node.scrollTop]);
+    setIndex(0);setActive(true);
+  }
+  l.useEffect(()=>{
+    if(!active)return;
+    if(step.scene==="styles"&&!styleOpen) {ownedStyle.current=true;openStyle(true);}
+    if(step.scene!=="styles"&&ownedStyle.current) {ownedStyle.current=false;openStyle(false);}
+    let cancelled=false;
+    function measure() {
+      if(cancelled)return;
+      const dialog=step.scene==="styles"?document.querySelector('[data-acs-tour="style-dialog"]'):null;
+      const host=dialog||document.body;
+      let target=acsTourTarget(step.target),missing=!target&&!step.edge;
+      if(!target)target=acsTourTarget(step.fallback)||dialog||button.current;
+      if(target&&target!==seenTarget.current) {
+        seenTarget.current=target;
+        target.scrollIntoView({block:"nearest",inline:"nearest",behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?"instant":"smooth"});
+      }
+      const raw=step.edge?{x:innerWidth-14,y:innerHeight-34,width:12,height:30}:target?.getBoundingClientRect();
+      if(!raw)return;
+      const x=Math.max(2,raw.x-5),y=Math.max(2,raw.y-5);
+      const rect={x,y,width:Math.max(12,Math.min(innerWidth-2,raw.x+raw.width+5)-x),
+        height:Math.max(12,Math.min(innerHeight-2,raw.y+raw.height+5)-y)};
+      const width=Math.min(330,innerWidth-24),height=card.current?.offsetHeight||240;
+      const position=acsTourPlace(rect,width,height,innerWidth,innerHeight);
+      const hostRect=dialog?.getBoundingClientRect();
+      const offsetX=hostRect?hostRect.x+dialog.clientLeft:0,offsetY=hostRect?hostRect.y+dialog.clientTop:0;
+      setView(old=>old?.host===host&&old.missing===missing&&JSON.stringify(old.rect)===JSON.stringify(rect)&&
+        old.x===position.x&&old.y===position.y&&old.offsetX===offsetX&&old.offsetY===offsetY?old:
+        {host,rect,missing,offsetX,offsetY,insideDialog:!!dialog,...position});
+    }
+    measure();const timer=setInterval(measure,100);
+    addEventListener("resize",measure);addEventListener("scroll",measure,true);
+    return()=>{cancelled=true;clearInterval(timer);removeEventListener("resize",measure);removeEventListener("scroll",measure,true);};
+  },[active,index,styleOpen]);
+  l.useLayoutEffect(()=>{if(active&&view)card.current?.focus({preventScroll:true});},[active,index,view?.host]);
+  l.useEffect(()=>{
+    if(!active)return;
+    function keys(event) {
+      if(event.key==="Escape") {event.preventDefault();event.stopPropagation();finish();}
+      else if(event.key==="ArrowRight"||event.key==="ArrowLeft") {event.preventDefault();event.stopPropagation();move(event.key==="ArrowRight"?1:-1);}
+      else if(event.key==="Tab") {
+        const controls=[...card.current.querySelectorAll('button:not([disabled])')],at=controls.indexOf(document.activeElement);
+        event.preventDefault();event.stopPropagation();controls[(at+(event.shiftKey?-1:1)+controls.length)%controls.length]?.focus();
+      }
+    }
+    document.addEventListener("keydown",keys,true);
+    return()=>document.removeEventListener("keydown",keys,true);
+  },[active,index]);
+  const overlay=active&&view?f.jsxs("div",{className:"acs-tutorial-overlay","data-acs-tour-step":step.id,
+    style:view.insideDialog?{position:"absolute",inset:"auto",left:-view.offsetX,top:-view.offsetY,width:innerWidth,height:innerHeight}:undefined,
+    children:[f.jsx("div",{className:"acs-tour-shield"}),
+      f.jsxs("div",{className:"acs-tour-spotlight","data-color":step.color||"blue","data-side":view.side,
+        style:{left:view.rect.x,top:view.rect.y,width:view.rect.width,height:view.rect.height},
+        children:[f.jsx("div",{className:"acs-tour-halo"}),f.jsx("div",{className:"acs-tour-pointer"})]}),
+      f.jsxs("section",{ref:card,tabIndex:-1,role:"dialog","aria-modal":true,"aria-labelledby":"acs-tour-title",
+        className:"acs-tour-card",style:{left:view.x,top:view.y,width:Math.min(330,innerWidth-24)},children:[
+          f.jsxs("div",{className:"acs-tour-caption",children:[f.jsx("span",{children:"AUTOCATCHSUBS"}),f.jsx("span",{children:`${index+1} / ${ACS_TUTORIAL_STEPS.length}`})]}),
+          f.jsx("div",{className:"acs-tour-progress",children:f.jsx("div",{style:{width:`${100*(index+1)/ACS_TUTORIAL_STEPS.length}%`}})}),
+          f.jsxs("div",{className:"acs-tour-copy","aria-live":"polite",children:[f.jsx("h3",{id:"acs-tour-title",children:step.title}),
+            f.jsx("p",{children:step.text}),view.missing&&step.missing&&f.jsx("p",{className:"acs-tour-note",children:step.missing})]},step.id),
+          f.jsxs("div",{className:"acs-tour-navigation",children:[
+            f.jsx("button",{type:"button",onClick:finish,children:"Omitir"}),
+            f.jsx("button",{type:"button",onClick:()=>move(-1),disabled:index===0,children:"Anterior"}),
+            f.jsx("button",{type:"button",className:"acs-tour-next",onClick:()=>move(1),children:index===ACS_TUTORIAL_STEPS.length-1?"Terminar":"Siguiente"})]})]})]}):null;
+  return f.jsxs(f.Fragment,{children:[f.jsx("button",{ref:button,type:"button",className:"acs-tutorial-button",
+    "data-acs-tour":"tutorial-button",onClick:begin,title:"Tutorial de AUTOCATCHSUBS",children:"Tutorial"}),
+    overlay?As.createPortal(overlay,view.host):null]});
+}

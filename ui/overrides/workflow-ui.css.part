@@ -1,0 +1,33 @@
+.acs-style-heading { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.acs-style-heading > div:first-child { flex:1; min-width:200px; }
+.acs-style-search { width:178px; height:34px; padding:0 10px; border:1px solid hsl(var(--border));
+  border-radius:6px; font:inherit; font-size:12px; background:hsl(var(--background)); color:hsl(var(--foreground)); }
+.acs-style-search:focus { outline:2px solid #3b82f6; outline-offset:1px; }
+.acs-refresh-styles { width:30px; height:34px; flex:0 0 30px; border:1px solid hsl(var(--border));
+  border-radius:6px; font-size:21px; color:#9ec7ff; background:hsl(var(--background)); }
+.acs-refresh-styles:hover { border-color:#3b82f6; background:#202d43; }
+.acs-refresh-styles:disabled { opacity:.55; cursor:wait; }
+.acs-delete { color:#ef6068; }
+.acs-delete:hover { color:#ff7880; background:rgba(239,96,104,.08); }
+.acs-style-row { position:relative; }
+.acs-style-select { padding-right:58px; gap:10px; }
+.acs-style-row > .acs-favorite { position:absolute; right:10px; top:50%; transform:translateY(-50%); }
+.acs-favorite { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:30px; height:30px; padding:0; border:0; border-radius:5px; background:transparent;
+  color:#8a9bb4; cursor:pointer; }
+.acs-favorite[aria-pressed=true] { color:#6ba8ff; }
+.acs-favorite:hover { color:#acd0ff; background:rgba(59,130,246,.14); }
+.acs-favorite:focus-visible { outline:2px solid #3b82f6; outline-offset:1px; }
+.acs-undo-toast { pointer-events:none !important; }
+.acs-undo-toast button { pointer-events:auto; }
+.acs-word-actions { max-width:100%; flex-wrap:nowrap; }
+.acs-word-actions > button { padding-left:7px; padding-right:7px; gap:4px; font-size:10px; white-space:nowrap; }
+.acs-window-shell { display:flex; flex-direction:row; height:100vh; overflow:hidden; position:relative; }
+.acs-main-content { flex:1; min-width:0; height:100%; }
+.acs-style-progress { margin:7px 0; min-height:29px; width:100%; color:#9ec7ff; font-size:11px; }
+.acs-progress-caption { display:flex; justify-content:space-between; gap:12px; margin-bottom:4px; }
+.acs-progress-track { height:3px; border-radius:3px; overflow:hidden; background:#243044; }
+.acs-progress-fill { height:100%; border-radius:3px; background:#3b82f6; transition:width 160ms linear; }
+.acs-progress-indeterminate { width:25%; animation:acs-progress-moving 1100ms ease-in-out infinite alternate; }
+@keyframes acs-progress-moving { from{transform:translateX(-10%)} to{transform:translateX(310%)} }
+@media(prefers-reduced-motion:reduce) { .acs-progress-indeterminate{animation:none;} .acs-progress-fill{transition:none;} }

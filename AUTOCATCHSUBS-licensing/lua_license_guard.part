@@ -1,0 +1,13 @@
+
+-- The native JR verifier remains mandatory for direct Resolve mutations.
+local function VerifyEditorLicense()
+    local launcher=process_launcher()
+    local root=main_app:match("^(.*)[\\/][^\\/]+$")
+    local process,problem=launcher.start(main_app,'--autocatch-check-license',root)
+    if not process then print('[AUTOCATCHSUBS_ERROR] Verificador: '..problem);return false end
+    local finished=launcher.wait(process,35000)
+    local _,code=launcher.exited(process)
+    if not finished then launcher.terminate(process,23) end
+    launcher.close(process)
+    return finished and code==0
+end
