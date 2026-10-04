@@ -7,11 +7,12 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 python_files = list((ROOT / 'AUTOCATCHSUBS-backend-source').rglob('*.py'))
 python_files += list((ROOT / 'AUTOCATCHSUBS-licensing').glob('*.py'))
+python_files += list((ROOT / 'tools').rglob('*.py'))
 for file in python_files:
     ast.parse(file.read_text(encoding='utf-8-sig'), filename=str(file))
 for relative in ('AUTOCATCHSUBS-licensing/activation.js',
                  'AUTOCATCHSUBS-licensing/service/worker.mjs',
-                 'ui/overrides/patch_ui.cjs'):
+                 'ui/overrides/patch_ui.cjs', 'tools/build-ui.cjs'):
     subprocess.run(['node', '--check', str(ROOT / relative)], check=True)
 subprocess.run(['node', str(ROOT / 'ui/overrides/patch_ui.cjs')], check=True)
 subprocess.run(['node', '--check', str(ROOT / 'ui/preview/assets/index-BRt8Z4DF.js')], check=True)

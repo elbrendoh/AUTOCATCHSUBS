@@ -7,7 +7,7 @@ exact('const t=Ee(i=>i.preferredEditorIntegration),n=Ee(i=>i.updateSetting),r=re
       'const t="davinci",n=Ee(i=>i.updateSetting),r=re.useCallback(()=>{n("preferredEditorIntegration","davinci")},[n]);');
 exact('m={davinci:{productName:e("titlebar.resolve.productName"),', 'm={davinci:{productName:"AUTOCATCHSUBS",');
 exact('className:`truncate min-w-0 ${y.connected?"":"text-gray-600 dark:text-gray-400"}`,children:v',
-      'title:"DaVinci Resolve Â· "+v,className:`truncate min-w-0 ${y.connected?"":"text-gray-600 dark:text-gray-400"}`,children:"AUTOCATCHSUBS"');
+      'title:"DaVinci Resolve · "+v,className:`truncate min-w-0 ${y.connected?"":"text-gray-600 dark:text-gray-400"}`,children:"AUTOCATCHSUBS"');
 exact('Object.keys(m).map(b=>{const S=m[b];', '["davinci"].map(b=>{const S=m[b];');
 exact('children:[f.jsxs(hr,{children:[f.jsx(pr,{asChild:!0,children:f.jsx(Se,{type:"button",variant:"ghost",size:"icon-sm",className:"rounded-sm",onClick:()=>y(!0),children:f.jsx(W6,{})})})',
       'children:[f.jsx(ACSTutorial,{openStyle:y,styleOpen:m}),f.jsxs(hr,{children:[f.jsx(pr,{asChild:!0,children:f.jsx(Se,{type:"button",variant:"ghost",size:"icon-sm",className:"rounded-sm","data-acs-tour":"styles",onClick:()=>y(!0),children:f.jsx(W6,{})})})');
@@ -25,18 +25,18 @@ exact('className:"shrink-0 p-3 flex justify-end gap-2 border-t shadow-2xl",child
 // Keep the original action visible and disabled until fresh timeline data returns.
 exact('Nn&&F.length>0&&f.jsx(Bee,', 'F.length>0&&f.jsx(Bee,');
 exact('variant:"secondary",size:"default",disabled:d,className:"w-full",onMouseEnter:',
-      'variant:"secondary",size:"default",disabled:d||!e?.timelineId,title:e?.timelineId?undefined:"Abre una timeline en Resolve. Se reintentarÃ¡ la conexiÃ³n automÃ¡ticamente.",className:"w-full",onMouseEnter:');
+      'variant:"secondary",size:"default",disabled:d||!e?.timelineId,title:e?.timelineId?undefined:"Abre una timeline en Resolve. Se reintentará la conexión automáticamente.",className:"w-full",onMouseEnter:');
 exact('_=window.setInterval(()=>{j()},6e4);', '_=window.setInterval(()=>{j()},1e4);');
 exact('},[o,h]);l.useEffect(()=>{let N=!1;if(t!=="davinci")',
       '},[o,h]);l.useEffect(()=>{const acsUpdate=items=>{s(items);p(!0);d(!1);i(info=>({...info,templates:items}))};ACS_TEMPLATE_LISTENERS.add(acsUpdate);return()=>ACS_TEMPLATE_LISTENERS.delete(acsUpdate)},[]);l.useEffect(()=>{s([]);p(!1);d(!1)},[r.projectName]);l.useEffect(()=>{let N=!1;if(t!=="davinci")');
 exact('No editor connected. Connect to DaVinci Resolve, Adobe Premiere Pro, or After Effects to customise templates.',
-      'Abre DaVinci Resolve y ejecuta Workspace â†’ Scripts â†’ Utility â†’ AUTOCATCHSUBS.');
+      'Abre DaVinci Resolve y ejecuta Workspace → Scripts → Utility → AUTOCATCHSUBS.');
 exact('const{t:j}=tt(),{selectedIntegration:q}=_s();if(l.useEffect',
       'const{t:j}=tt(),{selectedIntegration:q}=_s();const[acsQuery,acsSetQuery]=l.useState("");const acsFavorites=useACSFavorites();const acsStyles=useACSStyles(i),acsTemplates=acsStyles.items;const acsNormalize=x=>String(x??"").normalize("NFD").replace(/\\p{M}/gu,"").toLocaleLowerCase();const acsMatches=x=>acsNormalize(x).includes(acsNormalize(acsQuery.trim()));if(l.useEffect');
 exact('className:"grid gap-2 sm:grid-cols-[minmax(240px,460px)_auto] sm:items-center",children:[',
       'className:"acs-style-heading",children:[',1);
 exact('children:j("addToTimeline.mode.animated")})]})}),(e==="animated"||O)',
-      'children:j("addToTimeline.mode.animated")})]})}),f.jsx("input",{type:"search",className:"acs-style-search",value:acsQuery,onChange:acsEvent=>acsSetQuery(acsEvent.target.value),placeholder:"Buscar Text+â€¦","aria-label":"Buscar estilos Text+ por nombre"}),f.jsx(ACSRefreshStyles,{}),(e==="animated"||O)');
+      'children:j("addToTimeline.mode.animated")})]})}),f.jsx("input",{type:"search",className:"acs-style-search",value:acsQuery,onChange:acsEvent=>acsSetQuery(acsEvent.target.value),placeholder:"Buscar Text+…","aria-label":"Buscar estilos Text+ por nombre"}),f.jsx(ACSRefreshStyles,{}),(e==="animated"||O)');
 exact('i.filter(_=>_.value!==Fc)', 'acsFavoritesFirst(acsTemplates.filter(_=>_.value!==Fc&&acsMatches(_.label)),acsFavorites,x=>"text:"+x.value)',2);
 exact('.map(_=>f.jsxs("button",{type:"button",onClick:()=>r(_.value),className:fe("flex min-h-[56px] w-full items-center justify-between rounded-md border px-4 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",n===_.value?"border-slate-950 bg-slate-950 text-white shadow-sm":"border-border bg-background text-foreground hover:bg-muted/50"),children:[f.jsx("span",{children:_.label}),n===_.value&&f.jsx(ur,{className:"size-4 shrink-0"})]},_.value))',
       '.map(_=>f.jsx(ACSStyleRow,{item:_,selected:n===_.value,onSelect:()=>r(_.value),favorites:acsFavorites},_.value))');
@@ -52,14 +52,14 @@ exact('className:"ml-auto flex shrink-0 items-center gap-1",children:[i&&f.jsxs(
       'className:"ml-auto flex shrink-0 items-center gap-1",children:[f.jsx(ACSFavoriteButton,{favoriteKey:"preset:"+e.id,label:e.name,favorites:acsFavorites}),i&&f.jsxs(Se,');
 exact('presets:p,selectedPresetId:d,onSelect:h,onRequestEdit:v,onDelete:T,onExportJson:N,onDuplicate:M',
       'presets:p.filter(acsPreset=>acsMatches(acsPreset.name)),selectedPresetId:d,onSelect:h,onRequestEdit:v,onDelete:T,onExportJson:N,onDuplicate:M');
-exact('children:"No regular templates found."', 'children:acsQuery ? "No hay Text+ con ese nombre." : acsStyles.pending ? "Buscando Text+ en segundo planoâ€¦" : "No hay plantillas Text+ verificadas en el Media Pool."');
+exact('children:"No regular templates found."', 'children:acsQuery ? "No hay Text+ con ese nombre." : acsStyles.pending ? "Buscando Text+ en segundo plano…" : "No hay plantillas Text+ verificadas en el Media Pool."');
 exact('className:fe(e!=="animated"&&"hidden sm:flex sm:invisible sm:pointer-events-none")})]}),f.jsx(Es,{value:"regular"',
       'className:fe(e!=="animated"&&"hidden sm:flex sm:invisible sm:pointer-events-none")})]}),f.jsx(ACSStyleProgress,{progress:acsStyles.progress,pending:acsStyles.pending}),f.jsx(Es,{value:"regular"');
 exact('const{t:p}=tt(),{subtitles:m,updateSubtitles:y,speakers:v,updateSpeakers:b}=Ns(),[S,E]',
       'const{t:p}=tt(),{subtitles:m,updateSubtitles:y,speakers:v,updateSpeakers:b,currentSubtitleDocumentFilename:acsFilename}=Ns(),acsLatest=l.useRef(null);acsLatest.current={rows:m,filename:acsFilename};const[S,E]');
 exact('f.jsxs(jee,{className:"mt-4",children:[', 'f.jsxs(jee,{className:"mt-4 acs-word-actions",children:[');
 exact('children:"Move last word to next subtitle while preserving word timing"})})]})]}):null',
-      'children:"Move last word to next subtitle while preserving word timing"})})]}),f.jsx(Se,{type:"button",variant:"outline",className:"text-xs h-8 acs-delete",title:"Eliminar esta fila de la transcripciÃ³n",onMouseDown:acsEvent=>acsEvent.preventDefault(),onClick:acsEvent=>{acsEvent.stopPropagation();acsDeleteSubtitle({rows:m,index:Q,update:y,select:X,draft:T,original:P,speaker:j,latest:acsLatest,filename:acsFilename})},children:"ELIMINAR"})]}):null');
+      'children:"Move last word to next subtitle while preserving word timing"})})]}),f.jsx(Se,{type:"button",variant:"outline",className:"text-xs h-8 acs-delete",title:"Eliminar esta fila de la transcripción",onMouseDown:acsEvent=>acsEvent.preventDefault(),onClick:acsEvent=>{acsEvent.stopPropagation();acsDeleteSubtitle({rows:m,index:Q,update:y,select:X,draft:T,original:P,speaker:j,latest:acsLatest,filename:acsFilename})},children:"ELIMINAR"})]}):null');
 exact('R&&f.jsx(Hee,{}),F&&f.jsx(_ce,{}),V&&f.jsx(tre,{})]})})}',
       'R&&f.jsx(Hee,{}),F&&f.jsx(_ce,{}),V&&f.jsx(tre,{})]}),f.jsx(ACSConsole,{})]})})}');
 exact('return f.jsx(J2,{children:f.jsxs("div",{className:"flex flex-col h-screen overflow-hidden bg-background relative",children:[',

@@ -18,4 +18,11 @@ result = subprocess.run([str(package / 'AUTOCATCHSUBSBackend.exe'), '--installat
 report = json.loads(output.read_text())
 assert result.returncode == 0 and report['passed'] and report['native_exit'] == 23
 assert not report['activation_performed']
-print('Manifest, JR activation guard, Text+ compression, Tcl/Tk and backend startup passed offline.')
+audio=ROOT/'AUTOCATCHSUBS-build-tools/synthetic-audio.wav'
+result=subprocess.run([str(package/'ffmpeg.exe'),'-hide_banner','-loglevel','error',
+                       '-f','lavfi','-i','sine=frequency=800:duration=0.2',
+                       '-ar','16000','-ac','1','-y',str(audio)],
+                      cwd=package,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
+assert result.returncode==0 and audio.read_bytes()[:4]==b'RIFF'
+audio.unlink()
+print('Manifest, JR guard, Text+ compression, Tcl/Tk, backend and FFmpeg conversion passed offline.')

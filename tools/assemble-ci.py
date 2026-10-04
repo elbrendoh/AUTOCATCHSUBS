@@ -1,6 +1,7 @@
 """Assemble an unsigned JR candidate from this checkout and verified build outputs."""
 from pathlib import Path
 import hashlib
+import importlib.metadata
 import json
 import os
 import shutil
@@ -49,6 +50,25 @@ def main():
         + 'Third-party license/source compliance must be reviewed before a production release.\n', encoding='utf-8')
     for name in ('LICENSE', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md'):
         shutil.copy2(ROOT / name, package / name)
+    python_notices=package/'third-party/python'
+    python_notices.mkdir(parents=True,exist_ok=True)
+    python_license=Path(sys.base_prefix)/'LICENSE.txt'
+    if not python_license.is_file():
+        raise RuntimeError('Python runtime license missing')
+    shutil.copy2(python_license,python_notices/'LICENSE-Python.txt')
+    for name in ('pyinstaller','cryptography','cffi','pycparser','backports.zstd'):
+        distribution=importlib.metadata.distribution(name)
+        copied=0
+        for relative in distribution.files or []:
+            if 'licenses' in relative.parts or relative.name.upper().startswith(('LICENSE','COPYING','COPYRIGHT')):
+                source=Path(distribution.locate_file(relative))
+                if source.is_file():
+                    destination=python_notices/name/Path(*relative.parts)
+                    destination.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copy2(source,destination)
+                    copied+=1
+        if not copied:
+            raise RuntimeError('Dependency license missing: '+name)
     (package / 'ABRIR AUTOCATCHSUBS.cmd').write_text('@echo off\nstart "" "%~dp0AUTOCATCHSUBSBackend.exe"\n', encoding='ascii')
     diagnostic(package / 'DIAGNOSTICO AUTOCATCHSUBS.cmd', 'jr')
     files = {}

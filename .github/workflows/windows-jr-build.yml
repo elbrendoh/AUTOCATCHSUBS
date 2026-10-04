@@ -15,7 +15,7 @@ permissions:
   contents: read
 concurrency:
   group: windows-jr-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-2022
@@ -54,6 +54,10 @@ jobs:
           python -m pip install -r requirements-build.txt
           if($LASTEXITCODE -ne 0){throw 'Python dependencies failed'}
           python -m pip freeze > AUTOCATCHSUBS-python-environment.txt
+          python tools/test-runtime.py
+          if($LASTEXITCODE -ne 0){throw 'Runtime regression tests failed'}
+          node tools/build-ui.cjs
+          if($LASTEXITCODE -ne 0){throw 'Frontend reconstruction failed'}
           rustup toolchain install 1.99.0 --profile minimal
           if($LASTEXITCODE -ne 0){throw 'Rust toolchain failed'}
       - name: Verified Windows dependencies
@@ -74,6 +78,18 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'Python backend build failed'}
           python tools/assemble-ci.py
           if($LASTEXITCODE -ne 0){throw 'Package assembly failed'}
+      - name: Dependency and signature inventory
+        run: |
+          Push-Location ./AUTOCATCHSUBS-release-source
+          try {
+            cargo metadata --locked --format-version 1 > ../AUTOCATCHSUBS-build-tools/cargo-metadata.json
+            if($LASTEXITCODE -ne 0){throw 'Cargo metadata failed'}
+          } finally {Pop-Location}
+          $rows=Get-ChildItem ./AUTOCATCHSUBS-packages/jr -Recurse -File | Where-Object Extension -in '.exe','.dll','.pyd' | ForEach-Object {
+            $sig=Get-AuthenticodeSignature -LiteralPath $_.FullName
+            @{file=$_.FullName.Substring((Resolve-Path ./AUTOCATCHSUBS-packages/jr).Path.Length+1);sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash;signature=$sig.Status.ToString();publisher=$sig.SignerCertificate.Subject}
+          }
+          $rows | ConvertTo-Json -Depth 4 | Set-Content ./AUTOCATCHSUBS-build-tools/signature-inventory.json
       - name: Offline runtime and activation guard checks
         run: |
           python tools/smoke-ci.py
