@@ -24,6 +24,8 @@ La licencia MIT permite modificar y compilar el software. Por ello, conservar el
 
 Consulta [BUILD.md](BUILD.md), [PRIVACY.md](PRIVACY.md) y [CODE_SIGNING.md](CODE_SIGNING.md).
 
+El workflow Windows JR installer (unsigned) ya construye y prueba el instalador en GitHub. La ejecucion final y sus limites estan documentados en [CI_RESULT.md](CI_RESULT.md). El candidato conserva la activacion JR y todavia no tiene firma de distribucion.
+
 ## Estado de distribucion
 
 El codigo esta publicado bajo MIT. El propietario confirma que envio la solicitud a SignPath el 3 de octubre de 2026; respuesta y aprobacion pendientes. Todavia no cuenta con firma reconocida de distribucion. Windows con Control inteligente de aplicaciones puede bloquear los ejecutables actuales. No se cambia ni desactiva la seguridad del equipo.
