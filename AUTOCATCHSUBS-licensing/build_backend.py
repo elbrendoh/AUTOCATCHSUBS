@@ -14,7 +14,7 @@ version_file.write_text('''VSVersionInfo(
   StringStruct('CompanyName','AUTOCATCH'),StringStruct('FileDescription',PRODUCT+' Backend'),
   StringStruct('FileVersion','3.8.11.0'),StringStruct('InternalName','AUTOCATCHSUBSBackend'),
   StringStruct('OriginalFilename','AUTOCATCHSUBSBackend.exe'),StringStruct('ProductName',PRODUCT),
-  StringStruct('ProductVersion','3.8.11.0')])]),VarFileInfo([VarStruct('Translation',[1033,1200])])])
+  StringStruct('ProductVersion','3.8.11')])]),VarFileInfo([VarStruct('Translation',[1033,1200])])])
 '''.replace('PRODUCT',repr(product)),encoding='utf-8')
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--onedir','--windowed','--name','AUTOCATCHSUBSBackend',
       '--distpath',str(BASE/'AUTOCATCHSUBS-backend-dist'/edition),

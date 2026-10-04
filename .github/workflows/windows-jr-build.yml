@@ -1,11 +1,17 @@
 name: Windows JR installer (unsigned)
 on:
   workflow_dispatch:
+    inputs:
+      submit_own_binaries:
+        description: 'After SignPath approval: request signing of ONLY our two binaries (not a complete release)'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - '.github/workflows/windows-jr-build.yml'
       - 'tools/**'
+      - '.signpath/**'
       - 'requirements-build.txt'
       - 'AUTOCATCHSUBS-release-source/**'
       - 'AUTOCATCHSUBS-backend-source/jr/**'
@@ -19,6 +25,9 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2022
+    outputs:
+      own-artifact-id: ${{ steps.upload-own.outputs.artifact-id }}
+      version: ${{ steps.prepare-own.outputs.version }}
     timeout-minutes: 90
     defaults:
       run:
@@ -90,6 +99,16 @@ jobs:
             @{file=$_.FullName.Substring((Resolve-Path ./AUTOCATCHSUBS-packages/jr).Path.Length+1);sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash;signature=$sig.Status.ToString();publisher=$sig.SignerCertificate.Subject}
           }
           $rows | ConvertTo-Json -Depth 4 | Set-Content ./AUTOCATCHSUBS-build-tools/signature-inventory.json
+      - name: Prepare project-only signing inputs
+        id: prepare-own
+        run: ./tools/prepare-signpath.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload-own
+        with:
+          name: SignPath-unsigned-own-${{ github.sha }}
+          path: ${{ github.workspace }}/s/AUTOCATCHSUBS-build-tools/signpath-unsigned-own/*
+          retention-days: 3
+          if-no-files-found: error
       - name: Offline runtime and activation guard checks
         run: |
           python tools/smoke-ci.py
@@ -119,3 +138,65 @@ jobs:
             ${{ github.workspace }}/s/AUTOCATCHSUBS-build-tools/*.log
             ${{ github.workspace }}/s/AUTOCATCHSUBS-python-environment.txt
           retention-days: 3
+
+  sign-own-binaries:
+    # Explicit opt-in only. Disabled until the Foundation approves the project,
+    # owner configures the SignPath policy, certificate and protected environment.
+    # Never produces or publishes a complete signed installer.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.submit_own_binaries && vars.SIGNPATH_ENABLED == 'true'
+    needs: build
+    runs-on: windows-2022
+    environment: signpath-release
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Require approved SignPath configuration
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          SIGNPATH_CERTIFICATE_THUMBPRINT: ${{ vars.SIGNPATH_CERTIFICATE_THUMBPRINT }}
+        run: |
+          foreach($name in @('SIGNPATH_API_TOKEN','SIGNPATH_ORGANIZATION_ID','SIGNPATH_PROJECT_SLUG','SIGNPATH_SIGNING_POLICY_SLUG','SIGNPATH_ARTIFACT_CONFIGURATION_SLUG','SIGNPATH_CERTIFICATE_THUMBPRINT')){
+            if([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))){throw "Missing SignPath configuration: $name"}
+          }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.build.outputs.own-artifact-id }}
+          path: original
+          merge-multiple: true
+      - name: Submit own binaries for manual SignPath approval
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ needs.build.outputs.own-artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: signed-own
+          parameters: |
+            version: ${{ toJSON(needs.build.outputs.version) }}
+      - name: Verify trusted publisher and unchanged executable content
+        env:
+          SIGNPATH_CERTIFICATE_THUMBPRINT: ${{ vars.SIGNPATH_CERTIFICATE_THUMBPRINT }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: ./tools/verify-signpath.ps1 -Original ./original -Returned ./signed-own -Report ./signpath-verification.json -Version $env:RELEASE_VERSION
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AUTOCATCHSUBSJR-signed-own-only-${{ github.sha }}
+          path: |
+            signed-own/*
+            signpath-verification.json
+          retention-days: 3
+          if-no-files-found: error

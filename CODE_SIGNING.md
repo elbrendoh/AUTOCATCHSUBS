@@ -13,3 +13,5 @@ Propietario del repositorio y mantenedor propuesto para los roles de autor, revi
 El candidato generado por CI tiene sin firma AUTOCATCHSUBS.exe, AUTOCATCHSUBSBackend.exe, FFmpeg de BtbN y las extensiones _cffi_backend, backports.zstd._zstd y cryptography._rust. El instalador tambien debe firmarse. El acceso a firma de un proyecto no autoriza firmar binarios upstream ajenos; consultar a sus mantenedores o reconstruir/revisar lo permitido por SignPath. La firma del instalador por si sola no garantiza la carga de bibliotecas bloqueadas. Informe del build: [CI_RESULT.md](CI_RESULT.md).
 
 Los artefactos oficiales deben firmarse despues de compilar y antes de generar sus manifiestos/instaladores finales. Ninguna actualizacion debe modificar un archivo despues de firmarlo. No se agregan exclusiones de Defender ni se desactiva Smart App Control.
+
+La integracion preliminar para firmar los dos ejecutables propios esta documentada en [.signpath/README.md](.signpath/README.md). Permanece desactivada hasta recibir aprobacion y configurar la politica, el certificado y las credenciales de SignPath. No genera un instalador final firmado ni firma binarios de terceros.
